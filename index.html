@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen — Bible Study with AI · बाइबल अध्ययन</title>
+<script>
+  try {
+    var th = localStorage.getItem("theme") ||
+      (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.dataset.theme = th;
+  } catch (e) { document.documentElement.dataset.theme = "dark"; }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;700&family=Noto+Serif+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<nav id="nav">
+  <a href="#top" class="logo">✦ Lumen</a>
+  <div class="links">
+    <a href="#features" data-i18n="nav_features">Features</a>
+    <a href="#reader" data-i18n="nav_read">Read</a>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle light or dark theme">☀</button>
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="en" class="on">EN</button>
+      <button data-lang="ne">नेपाली</button>
+    </div>
+    <button class="account-btn" id="accountBtn" data-i18n="sign_in">Sign in</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="orb o1" data-speed="0.15"></div>
+  <div class="orb o2" data-speed="0.3"></div>
+  <div class="stars" id="stars"></div>
+  <div class="hero-inner" data-speed="-0.08">
+    <p class="eyebrow reveal" data-i18n="eyebrow">The Word, illuminated</p>
+    <h1 class="reveal" data-i18n-html="h1">Understand Scripture,<br><em>verse by verse.</em></h1>
+    <p class="sub reveal" data-i18n="sub">Read the whole Bible and let AI explain, summarize and connect every passage.</p>
+    <a href="#reader" class="btn reveal" data-i18n="cta">Start reading</a>
+  </div>
+  <div class="scroll-cue" data-i18n="scroll">scroll ↓</div>
+</header>
+
+<section class="section" id="features">
+  <h2 class="reveal" data-i18n="feat_title">Study with clarity</h2>
+  <div class="grid">
+    <article class="card tilt-card reveal" style="--d:0s"><span>📖</span><h3 data-i18n="f1t">Explain</h3><p data-i18n="f1p">Plain-language meaning, verse by verse.</p></article>
+    <article class="card tilt-card reveal" style="--d:.1s"><span>✍️</span><h3 data-i18n="f2t">Summarize</h3><p data-i18n="f2p">Any chapter distilled into a few sentences.</p></article>
+    <article class="card tilt-card reveal" style="--d:.2s"><span>🏛️</span><h3 data-i18n="f3t">Context</h3><p data-i18n="f3p">Author, audience, history and setting.</p></article>
+    <article class="card tilt-card reveal" style="--d:.3s"><span>🔗</span><h3 data-i18n="f4t">Cross-references</h3><p data-i18n="f4p">Related passages across the whole Bible.</p></article>
+  </div>
+</section>
+
+<!-- FULL-SCREEN READER (single column — AI moved to floating chat) -->
+<section class="section reader-section" id="reader">
+  <div class="toolbar">
+    <select id="book" aria-label="Book"></select>
+    <select id="chapter" aria-label="Chapter"></select>
+    <select id="view" aria-label="Bible language">
+      <option value="en" data-i18n="view_en">English</option>
+      <option value="ne" data-i18n="view_ne">Nepali</option>
+      <option value="both" data-i18n="view_both">Both</option>
+    </select>
+    <select id="tEn" aria-label="English translation"></select>
+    <select id="tNe" aria-label="Nepali translation"></select>
+    <span class="spacer"></span>
+    <button class="tb-btn" id="bookmarkBtn" data-i18n="bookmark">☆ Save</button>
+    <button class="tb-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+  </div>
+  <p class="notice" id="notice" hidden></p>
+
+  <div class="reader">
+    <div class="pane text-pane">
+      <div class="pane-head">
+        <h3 id="ref">…</h3>
+        <div class="nav-btns">
+          <button id="prev" data-i18n="prev">← Previous</button>
+          <button id="next" data-i18n="next">Next →</button>
+        </div>
+      </div>
+      <div id="verses"></div>
+      <p class="hint" data-i18n="hint">Tap verses to select them. None selected = whole chapter. Tap the ✦ button to ask AI.</p>
+    </div>
+  </div>
+</section>
+
+<footer data-i18n="footer">Made with ✦ · Public-domain and openly licensed texts</footer>
+
+<!-- FLOATING AI CHAT -->
+<button class="chat-fab" id="chatFab" aria-label="Open AI chat">
+  <span class="fab-icon">✦</span>
+  <span class="fab-badge" id="fabBadge" hidden></span>
+</button>
+
+<div class="chat-window" id="chatWindow" hidden>
+  <div class="chat-header" id="chatHeader">
+    <span class="drag-dots">⠿</span>
+    <span class="chat-title" data-i18n="chat_title">Ask Lumen</span>
+    <button class="chat-min" id="chatMin" aria-label="Minimize">─</button>
+    <button class="chat-close" id="chatClose" aria-label="Close">✕</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="out" class="empty" data-i18n="ai_empty">Choose an action to study this passage.</div>
+  <div class="ask">
+    <input id="q" data-i18n-ph="ask_ph" placeholder="Ask about this passage…">
+    <button id="askBtn" data-i18n="ask_btn">Ask</button>
+  </div>
+  <p class="hint" data-i18n="ai_hint">AI is a study aid. Traditions differ on many passages.</p>
+  <div class="resize-handle" id="resizeHandle"></div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-backdrop" id="authBackdrop" hidden>
+  <div class="modal">
+    <button class="modal-close" id="authClose">✕</button>
+    <div class="modal-tabs">
+      <button class="mtab on" data-mode="in" data-i18n="sign_in">Sign in</button>
+      <button class="mtab" data-mode="up" data-i18n="sign_up">Create account</button>
+    </div>
+    <form id="authForm">
+      <label data-i18n="email">Email</label>
+      <input type="email" id="authEmail" required autocomplete="email">
+      <label data-i18n="password">Password</label>
+      <input type="password" id="authPassword" required minlength="6" autocomplete="current-password">
+      <p class="modal-msg" id="authMsg"></p>
+      <button type="button" class="tb-btn" id="resendBtn" data-i18n="resend_confirm" hidden style="width:100%;margin-bottom:10px">Resend confirmation email</button>
+      <button type="submit" class="btn modal-submit" id="authSubmit" data-i18n="sign_in">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-backdrop" id="settingsBackdrop" hidden>
+  <div class="modal">
+    <button class="modal-close" id="settingsClose">✕</button>
+    <h3 data-i18n="settings_title">Settings</h3>
+
+    <div class="setting-row">
+      <span data-i18n="font_size">Text size</span>
+      <div class="font-ctrl">
+        <button id="fontMinus">A−</button>
+        <span id="fontVal">100%</span>
+        <button id="fontPlus">A+</button>
+      </div>
+    </div>
+
+    <div class="setting-row" id="accountRow" hidden>
+      <span data-i18n="signed_in_as">Signed in as</span>
+      <strong id="accountEmail"></strong>
+    </div>
+
+    <button class="btn modal-submit" id="signOutBtn" hidden data-i18n="sign_out">Sign out</button>
+    <p class="hint" id="syncHint" data-i18n="sync_hint_off">Sign in to save your settings and reading position across devices.</p>
+  </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
